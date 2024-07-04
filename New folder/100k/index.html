@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Unity WebGL Player | Money</title>
+    <script src="Build/UnityLoader.js"></script>
+    <script>
+      UnityLoader.instantiate("unityContainer", "Build/webgl2.json");
+    </script>
+    <style>
+      html{
+          min-height:100%;/* make sure it is at least as tall as the viewport */
+          min-width: 100%;
+          position:relative;
+      }
+      body{
+          height:100%; /* force the BODY element to match the height of the HTML element */
+      }
+      #cloud-container{
+          position:absolute;
+          top:0;
+          bottom:0;
+          left:0;
+          right:0;
+          overflow:hidden;
+      }
+      </style>
+  </head>
+  <body>
+    <div id="cloud-container">
+      <div id="unityContainer" style="height: 100%"></div>
+      <!-- <div id="unityContainer" style="width: 1366px; height: 768px; margin: auto"></div> -->
+      </div>
+  </body>
+</html>
