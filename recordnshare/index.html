@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Capture Stream from Two Stacked Canvases</title>
+<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.10.0/dist/ffmpeg.min.js"></script>
+<meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
+<meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp">
+<script>
+    if (!crossOriginIsolated) SharedArrayBuffer = ArrayBuffer;
+</script>
+<style>
+    body {
+        font: 14px "Open Sans", "Arial", sans-serif;
+    }
+
+    video {
+        margin-top: 2px;
+        border: 1px solid black;
+    }
+
+    .button {
+        cursor: pointer;
+        display: block;
+        width: 160px;
+        border: 1px solid black;
+        font-size: 16px;
+        text-align: center;
+        padding-top: 2px;
+        padding-bottom: 4px;
+        color: white;
+        background-color: darkgreen;
+        text-decoration: none;
+        margin-bottom: 10px;
+    }
+
+    h2 {
+        margin-bottom: 4px;
+    }
+
+    .left, .right {
+        float: left;
+        width: 160px;
+        padding: 0px;
+    }
+
+    .right {
+        margin-left: 20px;
+    }
+
+    .bottom {
+        clear: both;
+        padding-top: 10px;
+    }
+
+    #container {
+        position: relative;
+        width: 640px;
+        height: 480px;
+        border: 1px solid black;
+    }
+
+    #canvas1, #canvas2, #combinedCanvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+
+    #canvas1 {
+        width: 640px;
+        height: 480px;
+    }
+
+    #canvas2 {
+        width: 320px;
+        height: 240px;
+    }
+
+    #combinedCanvas {
+        width: 640px;
+        height: 480px;
+        z-index: 10; /* Ensure it is on top for visibility */
+    }
+</style>
+</head>
+<body>
+    <div>
+        <div class="button" id="startButton">Start Recording</div>
+        <div class="button" id="stopButton">Stop Recording</div>
+        <a id="downloadButton" class="button">Download</a>
+        <div class="button" id="shareButton">Share</div> <!-- Tambahkan tombol share -->
+    </div>
+
+    <div class="left">
+        <h2>Preview</h2>
+        <video id="preview" width="160" height="120" autoplay muted></video>
+    </div>
+
+    <div class="right">
+        <h2>Recording</h2>
+        <video id="recording" width="160" height="120" controls></video>
+    </div>
+
+    <div class="bottom">
+        <div id="container">
+            <canvas id="canvas1" width="640" height="480"></canvas>
+            <canvas id="canvas2" width="320" height="240"></canvas>
+            <canvas id="combinedCanvas" width="640" height="480"></canvas>
+        </div>
+    </div>
+
+    <pre id="log"></pre>
+
+<script>
+let preview = document.getElementById("preview");
+let canvas1 = document.getElementById("canvas1");
+let canvas2 = document.getElementById("canvas2");
+let combinedCanvas = document.getElementById("combinedCanvas");
+let recording = document.getElementById("recording");
+let startButton = document.getElementById("startButton");
+let stopButton = document.getElementById("stopButton");
+let downloadButton = document.getElementById("downloadButton");
+let logElement = document.getElementById("log");
+let shareButton = document.getElementById("shareButton"); // Ambil referensi tombol share
+
+let recorder;
+let data = [];
+
+function log(msg) {
+    logElement.innerHTML += `${msg}\n`;
+}
+
+function startRecording(stream) {
+    recorder = new MediaRecorder(stream);
+    data = [];
+
+    recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+            data.push(event.data);
+        }
+    };
+    recorder.start();
+    log(`${recorder.state}...`);
+}
+
+function stopRecording() {
+    recorder.stop();
+    recorder.onstop = () => {
+        let recordedBlob = new Blob(data, { type: "video/webm" });
+        recording.src = URL.createObjectURL(recordedBlob);
+        downloadButton.href = recording.src;
+        downloadButton.download = "RecordedVideo.webm";
+        log(`Successfully recorded ${recordedBlob.size} bytes of ${recordedBlob.type} media.`);
+        console.log(recordedBlob);
+    };
+}
+
+function stop(stream) {
+    stream.getTracks().forEach((track) => track.stop());
+}
+
+function drawCanvasFromVideo(video, canvas) {
+    let context = canvas.getContext("2d");
+    setInterval(() => {
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    }, 100); // Draw video frame to canvas every 100ms
+}
+
+function drawChangingDivToCanvas(canvas) {
+    let context = canvas.getContext("2d");
+    setInterval(() => {
+        let color = `rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)})`;
+        context.fillStyle = color;
+        context.fillRect(0, 0, canvas.width, canvas.height);
+    }, 500); // Change color every 500ms
+}
+
+function combineCanvases() {
+    let combinedContext = combinedCanvas.getContext("2d");
+    let context1 = canvas1.getContext("2d");
+    let context2 = canvas2.getContext("2d");
+
+    setInterval(() => {
+        combinedContext.clearRect(0, 0, combinedCanvas.width, combinedCanvas.height);
+        combinedContext.drawImage(canvas1, 0, 0);
+        combinedContext.drawImage(canvas2, 0, 0, canvas2.width, canvas2.height);
+    }, 100); // Combine both canvases every 100ms
+}
+
+startButton.addEventListener("click", () => {
+    navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+        .then(stream => {
+            preview.srcObject = stream;
+            preview.onloadedmetadata = () => {
+                drawCanvasFromVideo(preview, canvas1);
+                drawChangingDivToCanvas(canvas2);
+                combineCanvases();
+
+                let combinedStream = combinedCanvas.captureStream(30); // 30 FPS
+                startRecording(combinedStream);
+            };
+        })
+        .catch(error => {
+            log(`Error accessing media devices: ${error}`);
+        });
+});
+
+stopButton.addEventListener("click", () => {
+    stopRecording();
+    stop(preview.srcObject);
+});
+
+const { createFFmpeg, fetchFile } = FFmpeg;
+const ffmpeg = createFFmpeg({ log: true });
+
+async function convertWebmToMp4(webmBlob) {
+    await ffmpeg.load();
+    ffmpeg.FS('writeFile', 'input.webm', await fetchFile(webmBlob));
+    await ffmpeg.run('-i', 'input.webm', 'output.mp4');
+    const mp4Data = ffmpeg.FS('readFile', 'output.mp4');
+
+    return new Blob([mp4Data.buffer], { type: 'video/mp4' });
+}
+
+shareButton.addEventListener("click", async () => {
+    // if (navigator.share) {
+    //     let recordedBlob = new Blob(data, { type: "video/mp4" }); // Menggunakan MIME type video/mp4
+    //     let file = new File([recordedBlob], "RecordedVideo.mp4", { type: "video/mp4" }); // Menggunakan ekstensi .mp4
+    //     console.log(file);
+    //     try {
+    //         await navigator.share({
+    //             title: 'Recorded Video',
+    //             text: 'Check out this recorded video!',
+    //             files: [file]
+    //         });
+    //         console.log('Video shared successfully');
+    //     } catch (error) {
+    //         console.error('Error sharing video: ', error);
+    //     }
+    // } else {
+    //     alert('Sharing is not supported on this browser.');
+    // }
+    if (navigator.share) {
+        let webmBlob = new Blob(data, { type: "video/webm" });
+        
+        // Convert webm to mp4
+        let mp4Blob = await convertWebmToMp4(webmBlob);
+        let file = new File([mp4Blob], "RecordedVideo.mp4", { type: "video/mp4" });
+
+        try {
+            await navigator.share({
+                title: 'Recorded Video',
+                text: 'Check out this recorded video!',
+                files: [file]
+            });
+            console.log('Video shared successfully');
+        } catch (error) {
+            console.error('Error sharing video: ', error);
+        }
+    } else {
+        alert('Sharing is not supported on this browser.');
+    }
+});
+
+
+
+</script>
+</body>
+</html>
