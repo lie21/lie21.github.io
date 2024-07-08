@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Unity WebGL Player | Screenshoot and Record WebGL</title>
+    <link rel="shortcut icon" href="TemplateData/favicon.ico">
+    <link rel="stylesheet" href="TemplateData/style.css">
+    <!-- Include from the CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.0.0-rc.5/dist/html2canvas.min.js"></script>
+    <!-- script used for audio/video/gif recording -->
+    <script src="https://cdn.webrtc-experiment.com/RecordRTC.js"> </script>
+    <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+  </head>
+  <body>
+    <div id="unity-container" class="unity-desktop">
+      <canvas id="unity-canvas" width=100% height=100%></canvas>
+      <div id="unity-loading-bar">
+        <div id="unity-logo"></div>
+        <div id="unity-progress-bar-empty">
+          <div id="unity-progress-bar-full"></div>
+        </div>
+      </div>
+      <div id="unity-warning"> </div>
+      <!-- <div id="unity-footer">
+        <div id="unity-webgl-logo"></div>
+        <div id="unity-fullscreen-button"></div>
+        <div id="unity-build-title">Screenshoot and Record WebGL</div>
+      </div> -->
+    </div>
+    <video id="recording" style="width: 50vw; height: 50vh; position: absolute; display: none;" controls></video>
+    <div id="photo-output" style="width: 50vw; height: 50vh; position: absolute; display: none;"></div>
+    <script>
+      var container = document.querySelector("#unity-container");
+      var canvas = document.querySelector("#unity-canvas");
+      var loadingBar = document.querySelector("#unity-loading-bar");
+      var progressBarFull = document.querySelector("#unity-progress-bar-full");
+      var warningBanner = document.querySelector("#unity-warning");
+      var displayMode = "none";
+
+      // Shows a temporary message banner/ribbon for a few seconds, or
+      // a permanent error message on top of the canvas if type=='error'.
+      // If type=='warning', a yellow highlight color is used.
+      // Modify or remove this function to customize the visually presented
+      // way that non-critical warnings and error messages are presented to the
+      // user.
+      function unityShowBanner(msg, type) {
+        function updateBannerVisibility() {
+          warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
+        }
+        var div = document.createElement('div');
+        div.innerHTML = msg;
+        warningBanner.appendChild(div);
+        if (type == 'error') div.style = 'background: red; padding: 10px;';
+        else {
+          if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
+          setTimeout(function() {
+            warningBanner.removeChild(div);
+            updateBannerVisibility();
+          }, 5000);
+        }
+        updateBannerVisibility();
+      }
+
+      var buildUrl = "Build";
+      var loaderUrl = buildUrl + "/ssrecord4.loader.js";
+      var config = {
+        dataUrl: buildUrl + "/ssrecord4.data.unityweb",
+        frameworkUrl: buildUrl + "/ssrecord4.framework.js.unityweb",
+        codeUrl: buildUrl + "/ssrecord4.wasm.unityweb",
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: "DefaultCompany",
+        productName: "Screenshoot and Record WebGL",
+        productVersion: "0.1",
+        showBanner: unityShowBanner,
+      };
+
+      // By default Unity keeps WebGL canvas render target size matched with
+      // the DOM size of the canvas element (scaled by window.devicePixelRatio)
+      // Set this to false if you want to decouple this synchronization from
+      // happening inside the engine, and you would instead like to size up
+      // the canvas DOM size and WebGL render target sizes yourself.
+      // config.matchWebGLToCanvasSize = false;
+
+      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+        // Mobile device style: fill the whole browser client area with the game canvas:
+
+        var meta = document.createElement('meta');
+        meta.name = 'viewport';
+        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
+        document.getElementsByTagName('head')[0].appendChild(meta);
+        container.className = "unity-mobile";
+        canvas.className = "unity-mobile";
+
+        displayMode = "flex";
+        // To lower canvas resolution on mobile devices to gain some
+        // performance, uncomment the following line:
+        // config.devicePixelRatio = 1;
+
+        // unityShowBanner('WebGL builds are not supported on mobile devices.');
+      } else {
+        // Desktop style: Render the game canvas in a window that can be maximized to fullscreen:
+
+        displayMode = "none";
+
+        canvas.style.width = "100%";
+        canvas.style.height = "100%";
+      }
+
+      loadingBar.style.display = "block";
+
+      var MyGameInstance;
+      var script = document.createElement("script");
+      script.src = loaderUrl;
+      script.onload = () => {
+        createUnityInstance(canvas, config, (progress) => {
+          progressBarFull.style.width = 100 * progress + "%";
+        }).then((unityInstance) => {
+          loadingBar.style.display = "none";
+          MyGameInstance = unityInstance;
+        }).catch((message) => {
+          alert(message);
+        });
+      };
+      document.body.appendChild(script);
+    </script>
+
+    <script>
+      let photo = document.getElementById("photo-output");
+      let videoRecording = document.getElementById("recording");
+      var link = document.createElement("a");
+      var myBlob = new Blob();
+      var files;
+      var photoname;
+      var videoname;
+      var mode;
+      function TakeShotJs() {
+          let div = document.body;
+          html2canvas(div, {
+              height: window.innerHeight,
+              allowTaint: true,
+              useCORS: true
+          }).then(
+              function (canvas) {
+                  canvas.toBlob(function (blob) {
+                      link.href = URL.createObjectURL(blob);
+                      console.log(blob);
+                      myBlob = blob;
+                  }, 'image/png');
+                  canvas.style.width = "100%";
+                  canvas.style.height = "100%";
+
+                  photo.appendChild(canvas);
+                  photo.style.display = "block";
+                  mode = "photo";
+
+                  //Creating an actual File
+                  // const file = new File([myBlob], photoname +'.png', {
+                  //   type: myBlob.type,
+                  // });
+
+                  // files = [file];
+                  // console.log(files);
+                })
+      }
+
+      function downloadImage() {
+          console.log(link.href);
+          link.download = photoname;
+          var event = document.createEvent("MouseEvents");
+          event.initMouseEvent("click");
+          link.dispatchEvent(event);
+          window.URL.revokeObjectURL(link.href);
+      }
+
+      function closePreview() {
+          photo.style.display = "none";
+          videoRecording.style.display = "none";
+          if (photo.hasChildNodes()) {
+              photo.removeChild(photo.children[0]);
+          }
+      }
+
+      //Video Recording
+        let canvasUnity = document.getElementById("unity-canvas");
+        let combinedCanvas = document.getElementById("combinedCanvas");
+        let recording = document.getElementById("recording");
+        let downloadButton = document.createElement("a");
+        let recorder;
+        let data = [];
+        function startRecording(stream) {
+            recorder = new MediaRecorder(stream);
+            data = [];
+            recorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    data.push(event.data);
+                }
+            };
+            recorder.start();
+            console.log(`${recorder.state}...`);
+        }
+        function stopRecording() {
+            recorder.stop();
+            recorder.onstop = () => {
+              let recordedBlob = new Blob(data, { type: "video/mp4" });
+              convertStreams(recordedBlob);
+              alert("preparing video, plaese wait");
+            };
+        }
+        function stop(stream) {
+            stream.getTracks().forEach((track) => track.stop());
+        }
+        function drawCanvasFromVideo(video, canvas) {
+            let context = canvas.getContext("2d");
+            setInterval(() => {
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            }, 100); // Draw video frame to canvas every 100ms
+        }
+        function drawChangingDivToCanvas(canvas) {
+            let context = canvas.getContext("2d");
+            setInterval(() => {
+                let color = `rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)})`;
+                context.fillStyle = color;
+                context.fillRect(0, 0, canvas.width, canvas.height);
+            }, 500); // Change color every 500ms
+        }
+        function combineCanvases() {
+            let combinedContext = combinedCanvas.getContext("2d");
+            let context1 = canvas1.getContext("2d");
+            let context2 = canvasUnity.getContext("2d");
+            combinedCanvas.width = window.innerWidth;
+            combinedCanvas.height = window.innerHeight-150;
+            setInterval(() => {
+                combinedContext.clearRect(0, 0, window.innerWidth, window.innerHeight);
+                combinedContext.drawImage(canvas1, 0, 0, window.innerWidth, window.innerHeight);
+                combinedContext.drawImage(canvasUnity, 0, 0, window.innerWidth, window.innerHeight);
+            }, 100); // Combine both canvases every 100ms
+        }
+        function combineAndRecord() {
+          let canvasStream = canvasUnity.captureStream(30); // Capture screen in 30 FPS
+            startRecording(canvasStream);
+        }
+        function stopVideo(){
+            stopRecording();
+            console.log("Supposed to be stop video")
+            recording.style.display = "block";
+        }
+        function pressDownload() {
+            downloadButton.click();
+        }
+
+        async function shareMedia() {
+
+          if (mode === "photo") {
+            const file = new File([myBlob], photoname + '.png', {
+              type: myBlob.type,
+            });
+
+            files = [file];
+            console.log(files);
+          }
+          else if (mode === "video") {
+            const file = new File([myBlob], videoname + '.mp4', {
+              type: myBlob.type,
+            });
+
+            files = [file];
+            console.log(files);
+          }
+
+          if (files.length === 0) {
+            console.log("No files selected.");
+            return;
+          }
+          console.log("Try to share");
+            // feature detecting navigator.canShare() also implies
+            // the same for the navigator.share()
+            if (!navigator.canShare) {
+              //output.textContent = `Your browser doesn't support the Web Share API.`;
+              console.log("Your browser doesn't support the Web Share API.");
+              return;
+            }
+
+            if (navigator.canShare({ files })) {
+              try {
+                await navigator.share({
+                  files,
+                  title: "Images",
+                  text: "Beautiful images",
+                });
+                //output.textContent = "Shared!";
+                console.log("shared");
+              } catch (error) {
+                //output.textContent = `Error: ${error.message}`;
+                console.log(`Error: ${error.message}`);
+              }
+            } else {
+              //output.textContent = `Your system doesn't support sharing these files.`;
+              console.log("Your system doesn't support sharing these files.");
+            }
+          }
+
+          var Module = {
+              print: print,
+              printErr: print,
+              //files: message.files || [],
+              //arguments: message.arguments || [],
+              TOTAL_MEMORY: 268435456 // 256MB
+            };
+
+
+          var recordVideo;
+            var videoPreview = document.getElementById('preview');
+
+            var workerPath = 'https://archive.org/download/ffmpeg_asm/ffmpeg_asm.js';
+            if (document.domain == 'localhost') {
+            //if (document.domain == '192.168.100.103') {
+              workerPath = location.href.replace(location.href.split('/').pop(), '') + 'ffmpeg_asm.js';
+            }
+
+            function processInWebWorker() {
+                var blob = URL.createObjectURL(new Blob(['importScripts("' + workerPath + '");var now = Date.now;function print(text) {postMessage({"type" : "stdout","data" : text});};onmessage = function(event) {var message = event.data;if (message.type === "command") {var Module = {print: print,printErr: print,files: message.files || [],arguments: message.arguments || [],TOTAL_MEMORY: 268435456};postMessage({"type" : "start","data" : Module.arguments.join(" ")});postMessage({"type" : "stdout","data" : "Received command: " +Module.arguments.join(" ") +((Module.TOTAL_MEMORY) ? ".  Processing with " + Module.TOTAL_MEMORY + " bits." : "")});var time = now();var result = ffmpeg_run(Module);var totalTime = now() - time;postMessage({"type" : "stdout","data" : "Finished processing (took " + totalTime + "ms)"});postMessage({"type" : "done","data" : result,"time" : totalTime});}};postMessage({"type" : "ready"});'], {
+                  type: 'application/javascript'
+                }));
+
+                var worker = new Worker(blob);
+                URL.revokeObjectURL(blob);
+                return worker;
+              }
+
+
+            var worker;
+
+            function convertStreams(videoBlob) {
+              var aab;
+              var buffersReady;
+              var workerReady;
+              var posted;
+
+              var fileReader = new FileReader();
+              fileReader.onload = function () {
+                aab = this.result;
+                postMessage();
+              };
+              fileReader.readAsArrayBuffer(videoBlob);
+
+              if (!worker) {
+                worker = processInWebWorker();
+              }
+
+              worker.onmessage = function (event) {
+                var message = event.data;
+                if (message.type == "ready") {
+                  //log('<a href="' + workerPath + '" download="ffmpeg-asm.js">ffmpeg-asm.js</a> file has been loaded.');
+
+                  workerReady = true;
+                  if (buffersReady)
+                    postMessage();
+                } else if (message.type == "stdout") {
+                  //log(message.data);
+                } else if (message.type == "start") {
+                  //log('<a href="' + workerPath + '" download="ffmpeg-asm.js">ffmpeg-asm.js</a> file received ffmpeg command.');
+                } else if (message.type == "done") {
+                  //log(JSON.stringify(message));
+
+                  var result = message.data[0];
+                  //log(JSON.stringify(result));
+
+                  var blob = new File([result.data], 'test.mp4', {
+                    type: 'video/mp4'
+                  });
+
+                  //log(JSON.stringify(blob));
+
+                  PostBlob(blob);
+                }
+              };
+              var postMessage = function () {
+                posted = true;
+
+                worker.postMessage({
+                  type: 'command',
+                  arguments: '-i video.webm -c:v mpeg4 -b:v 6400k -strict experimental output.mp4'.split(' '),
+                  files: [
+                    {
+                      data: new Uint8Array(aab),
+                      name: 'video.webm'
+                    }
+                  ]
+                });
+              };
+            }
+
+            function PostBlob(blob) {
+              recording.src = URL.createObjectURL(blob);
+              recording.type = 'video/mp4; codecs=mpeg4';
+              downloadButton.href = recording.src;
+              downloadButton.download = "RecordedVideo.mp4";
+              console.log(blob);
+              alert("video ready to download");
+            }
+
+            window.onbeforeunload = function () {
+              startButton.disabled = false;
+            };
+    </script>
+  </body>
+</html>
