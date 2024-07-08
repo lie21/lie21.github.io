@@ -313,8 +313,8 @@
             var videoPreview = document.getElementById('preview');
 
             var workerPath = 'https://archive.org/download/ffmpeg_asm/ffmpeg_asm.js';
-            if (document.domain == 'localhost') {
-            //if (document.domain == '192.168.100.103') {
+            //if (document.domain == 'localhost') {
+            if (document.domain == 'https://lie21.github.io') {
               workerPath = location.href.replace(location.href.split('/').pop(), '') + 'ffmpeg_asm.js';
             }
 
