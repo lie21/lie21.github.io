@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Unity WebGL Player | Screenshoot and Share WebGL</title>
+    <link rel="shortcut icon" href="TemplateData/favicon.ico">
+    <link rel="stylesheet" href="TemplateData/style.css">
+    <!-- Include from the CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.0.0-rc.5/dist/html2canvas.min.js"></script>
+  </head>
+  <body>
+    <div id="unity-container" class="unity-desktop">
+      <canvas id="unity-canvas" width=100% height=100%></canvas>
+      <div id="unity-loading-bar">
+        <div id="unity-logo"></div>
+        <div id="unity-progress-bar-empty">
+          <div id="unity-progress-bar-full"></div>
+        </div>
+      </div>
+      <div id="unity-warning"> </div>
+      <!-- <div id="unity-footer">
+        <div id="unity-webgl-logo"></div>
+        <div id="unity-fullscreen-button"></div>
+        <div id="unity-build-title">Screenshoot and Share WebGL</div>
+      </div> -->
+    </div>
+    <div id="photo-output" style="width: 50vw; height: 50vh; position: absolute; display: none;"></div>
+    <script>
+      var container = document.querySelector("#unity-container");
+      var canvas = document.querySelector("#unity-canvas");
+      var loadingBar = document.querySelector("#unity-loading-bar");
+      var progressBarFull = document.querySelector("#unity-progress-bar-full");
+      var warningBanner = document.querySelector("#unity-warning");
+      var displayMode = "none";
+
+      // Shows a temporary message banner/ribbon for a few seconds, or
+      // a permanent error message on top of the canvas if type=='error'.
+      // If type=='warning', a yellow highlight color is used.
+      // Modify or remove this function to customize the visually presented
+      // way that non-critical warnings and error messages are presented to the
+      // user.
+      function unityShowBanner(msg, type) {
+        function updateBannerVisibility() {
+          warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
+        }
+        var div = document.createElement('div');
+        div.innerHTML = msg;
+        warningBanner.appendChild(div);
+        if (type == 'error') div.style = 'background: red; padding: 10px;';
+        else {
+          if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
+          setTimeout(function() {
+            warningBanner.removeChild(div);
+            updateBannerVisibility();
+          }, 5000);
+        }
+        updateBannerVisibility();
+      }
+
+      var buildUrl = "Build";
+      var loaderUrl = buildUrl + "/captureshare2.loader.js";
+      var config = {
+        dataUrl: buildUrl + "/captureshare2.data.unityweb",
+        frameworkUrl: buildUrl + "/captureshare2.framework.js.unityweb",
+        codeUrl: buildUrl + "/captureshare2.wasm.unityweb",
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: "Alittlebytes",
+        productName: "Screenshoot and Share WebGL",
+        productVersion: "0.1",
+        showBanner: unityShowBanner,
+      };
+
+      // By default Unity keeps WebGL canvas render target size matched with
+      // the DOM size of the canvas element (scaled by window.devicePixelRatio)
+      // Set this to false if you want to decouple this synchronization from
+      // happening inside the engine, and you would instead like to size up
+      // the canvas DOM size and WebGL render target sizes yourself.
+      // config.matchWebGLToCanvasSize = false;
+
+      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+        // Mobile device style: fill the whole browser client area with the game canvas:
+
+        var meta = document.createElement('meta');
+        meta.name = 'viewport';
+        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
+        document.getElementsByTagName('head')[0].appendChild(meta);
+        container.className = "unity-mobile";
+        canvas.className = "unity-mobile";
+
+        displayMode = "flex";
+        // To lower canvas resolution on mobile devices to gain some
+        // performance, uncomment the following line:
+        // config.devicePixelRatio = 1;
+
+        // unityShowBanner('WebGL builds are not supported on mobile devices.');
+      } else {
+        // Desktop style: Render the game canvas in a window that can be maximized to fullscreen:
+
+        displayMode = "none";
+
+        canvas.style.width = "100%";
+        canvas.style.height = "100%";
+      }
+
+      loadingBar.style.display = "block";
+
+      var MyGameInstance;
+      var script = document.createElement("script");
+      script.src = loaderUrl;
+      script.onload = () => {
+        createUnityInstance(canvas, config, (progress) => {
+          progressBarFull.style.width = 100 * progress + "%";
+        }).then((unityInstance) => {
+          loadingBar.style.display = "none";
+          MyGameInstance = unityInstance;
+        }).catch((message) => {
+          alert(message);
+        });
+      };
+      document.body.appendChild(script);
+    </script>
+
+    <script>
+      let photo = document.getElementById("photo-output");
+      var link = document.createElement("a");
+      var myBlob = new Blob();
+      var files;
+      var photoname = "PhotoName";
+      var photoCaption = "Beatiful Image";
+
+      //Take screenshot using html2canvas and save data to blob
+      function TakeShotJs() {
+          let div = document.body;
+          html2canvas(div, {
+              height: window.innerHeight,
+              allowTaint: true,
+              useCORS: true
+          }).then(
+              function (canvas) {
+                  canvas.toBlob(function (blob) {
+                      link.href = URL.createObjectURL(blob);
+                      console.log(blob);
+                      myBlob = blob;
+                  }, 'image/png');
+                  canvas.style.width = "100%";
+                  canvas.style.height = "100%";
+
+                  photo.appendChild(canvas);
+                })
+      }
+
+      //Download image
+      function downloadImage() {
+          console.log(link.href);
+          link.download = photoname;
+          var event = document.createEvent("MouseEvents");
+          event.initMouseEvent("click");
+          link.dispatchEvent(event);
+          window.URL.revokeObjectURL(link.href);
+      }
+      
+      function closePreview() {
+          photo.style.display = "none";
+          if (photo.hasChildNodes()) {
+              photo.removeChild(photo.children[0]);
+          }
+      }
+
+      async function shareMedia() {
+          //Creating an actual File
+          const file = new File([myBlob], photoname + '.png', {
+            type: myBlob.type,
+          });
+
+          files = [file];
+          console.log(files);
+          
+          //check file existension
+          if (files.length === 0) {
+            console.log("No files selected.");
+            return;
+          }
+
+          //check webshare API compability
+          console.log("Try to share");
+            if (!navigator.canShare) {
+              console.log("Your browser doesn't support the Web Share API.");
+              return;
+            }
+
+            //insert file properties and share
+            if (navigator.canShare({ files })) {
+              try {
+                await navigator.share({
+                  files,
+                  title: photoname,
+                  text: photoCaption,
+                });
+                console.log("shared");
+              } catch (error) {
+                console.log(`Error: ${error.message}`);
+              }
+            } else {
+              console.log("Your system doesn't support sharing these files.");
+            }
+          }
+        
+    </script>
+  </body>
+</html>
