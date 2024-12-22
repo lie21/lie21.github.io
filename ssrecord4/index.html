@@ -216,11 +216,14 @@
 
                 // Simpan metadata dalam localStorage atau sesuai kebutuhan
                 let metadata = {
-                  filename: videoname +".mp4",
+                  filename: "RecordedVideo.mp4",
                   duration: durationInSeconds,
                   description: "Recorded video with custom duration metadata"
                 };
-                localStorage.setItem("videoMetadata", JSON.stringify(metadata));                
+                localStorage.setItem("videoMetadata", JSON.stringify(metadata));
+
+                log(`Successfully recorded ${recordedBlob.size} bytes of ${recordedBlob.type} media.`);
+                console.log(recordedBlob);                
 
                 //Creating an actual File
                 // const file = new File([myBlob], videoname +'.mp4', {
