@@ -222,7 +222,7 @@
                 };
                 localStorage.setItem("videoMetadata", JSON.stringify(metadata));
 
-                console.log(`Successfully recorded ${recordedBlob.size} bytes of ${recordedBlob.type} media.`);
+                console.log(`Successfully recorded ${recordedBlob.size} bytes of ${recordedBlob.type} media. duration ${recordedBlob.duration}`);
                 console.log(recordedBlob);    
                 myBlob = recordedBlob;
                 mode = "video";            
