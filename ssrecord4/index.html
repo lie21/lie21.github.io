@@ -185,9 +185,14 @@
         let downloadButton = document.createElement("a");
         let recorder;
         let data = [];
+        let startTime;
+        let endTime;
+
         function startRecording(stream) {
             recorder = new MediaRecorder(stream);
             data = [];
+            startTime = Date.now();
+
             recorder.ondataavailable = (event) => {
                 if (event.data.size > 0) {
                     data.push(event.data);
@@ -199,13 +204,20 @@
         function stopRecording() {
             recorder.stop();
             recorder.onstop = () => {
+                endTime = Date.now();
+                let durationInSeconds = (endTime - startTime) / 1000;
                 let recordedBlob = new Blob(data, { type: "video/mp4" });
                 recording.src = URL.createObjectURL(recordedBlob);
+                if(recording.duration === Infinity){
+                  recording.currentTime  = durationInSeconds;
+                }
                 downloadButton.href = recording.src;
                 downloadButton.download = videoname +".mp4";
                 console.log(`Successfully recorded ${recordedBlob.size} bytes of ${recordedBlob.type} media.`);
                 myBlob = recordedBlob;
                 mode = "video";
+
+                
 
                 //Creating an actual File
                 // const file = new File([myBlob], videoname +'.mp4', {
