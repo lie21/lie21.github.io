@@ -206,8 +206,9 @@
             recorder.onstop = () => {
                 endTime = Date.now();
                 let durationInSeconds = (endTime - startTime) / 1000;
-                let recordedBlob = new Blob(data, { type: "video/mp4", duration: durationInSeconds });
+                let recordedBlob = new Blob(data, { type: "video/mp4" });
                 recording.src = URL.createObjectURL(recordedBlob);
+                recording.duration = durationInSeconds;
                 downloadButton.href = recording.src;
                 downloadButton.download = videoname +".mp4";
                 // console.log(`Successfully recorded ${recordedBlob.size} bytes of ${recordedBlob.type} media.`);
@@ -222,7 +223,7 @@
                 };
                 localStorage.setItem("videoMetadata", JSON.stringify(metadata));
 
-                console.log(`Successfully recorded ${recordedBlob.size} bytes of ${recordedBlob.type} media. duration ${recordedBlob.duration}`);
+                console.log(`Successfully recorded ${recordedBlob.size} bytes of ${recordedBlob.type} media.`);
                 console.log(recordedBlob);    
                 myBlob = recordedBlob;
                 mode = "video";            
