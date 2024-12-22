@@ -206,7 +206,7 @@
             recorder.onstop = () => {
                 endTime = Date.now();
                 let durationInSeconds = (endTime - startTime) / 1000;
-                let recordedBlob = new Blob(data, { type: "video/mp4" });
+                let recordedBlob = new Blob(data, { type: "video/mp4", duration: durationInSeconds });
                 recording.src = URL.createObjectURL(recordedBlob);
                 downloadButton.href = recording.src;
                 downloadButton.download = videoname +".mp4";
