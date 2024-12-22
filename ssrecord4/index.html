@@ -210,9 +210,9 @@
                 recording.src = URL.createObjectURL(recordedBlob);
                 downloadButton.href = recording.src;
                 downloadButton.download = videoname +".mp4";
-                console.log(`Successfully recorded ${recordedBlob.size} bytes of ${recordedBlob.type} media.`);
-                myBlob = recordedBlob;
-                mode = "video";
+                // console.log(`Successfully recorded ${recordedBlob.size} bytes of ${recordedBlob.type} media.`);
+                // myBlob = recordedBlob;
+                // mode = "video";
 
                 // Simpan metadata dalam localStorage atau sesuai kebutuhan
                 let metadata = {
@@ -222,8 +222,10 @@
                 };
                 localStorage.setItem("videoMetadata", JSON.stringify(metadata));
 
-                log(`Successfully recorded ${recordedBlob.size} bytes of ${recordedBlob.type} media.`);
-                console.log(recordedBlob);                
+                console.log(`Successfully recorded ${recordedBlob.size} bytes of ${recordedBlob.type} media.`);
+                console.log(recordedBlob);    
+                myBlob = recordedBlob;
+                mode = "video";            
 
                 //Creating an actual File
                 // const file = new File([myBlob], videoname +'.mp4', {
