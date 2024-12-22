@@ -187,7 +187,6 @@
         let data = [];
         let startTime;
         let endTime;
-        let durationInSeconds;
 
         function startRecording(stream) {
             recorder = new MediaRecorder(stream);
@@ -206,28 +205,16 @@
             recorder.stop();
             recorder.onstop = () => {
                 endTime = Date.now();
-                durationInSeconds = (endTime - startTime) / 1000;
+                let durationInSeconds = (endTime - startTime) / 1000;
                 let recordedBlob = new Blob(data, { type: "video/mp4" });
                 recording.src = URL.createObjectURL(recordedBlob);
-                //recording.currentTime = durationInSeconds;
                 downloadButton.href = recording.src;
                 downloadButton.download = videoname +".mp4";
-                console.log(`Successfully recorded ${recordedBlob.size} bytes of ${recordedBlob.type} media. duration = ${recording.duration}`);
+                console.log(`Successfully recorded ${recordedBlob.size} bytes of ${recordedBlob.type} media.`);
                 myBlob = recordedBlob;
                 mode = "video";
 
-                // Simpan metadata dalam localStorage atau sesuai kebutuhan
-                // let metadata = {
-                //   filename: "RecordedVideo.mp4",
-                //   duration: durationInSeconds,
-                //   description: "Recorded video with custom duration metadata"
-                // };
-                // localStorage.setItem("videoMetadata", JSON.stringify(metadata));
-
-                // console.log(`Successfully recorded ${recordedBlob.size} bytes of ${recordedBlob.type} media.`);
-                // console.log(recordedBlob);    
-                // myBlob = recordedBlob;
-                // mode = "video";            
+                
 
                 //Creating an actual File
                 // const file = new File([myBlob], videoname +'.mp4', {
@@ -293,8 +280,6 @@
           else if (mode === "video") {
             const file = new File([myBlob], videoname + '.mp4', {
               type: myBlob.type,
-              duration : durationInSeconds,
-              length : durationInSeconds
             });
 
             files = [file];
