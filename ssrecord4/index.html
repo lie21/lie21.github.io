@@ -208,25 +208,25 @@
                 let durationInSeconds = (endTime - startTime) / 1000;
                 let recordedBlob = new Blob(data, { type: "video/mp4" });
                 recording.src = URL.createObjectURL(recordedBlob);
-                recording.duration = durationInSeconds;
+                recording.currentTime = durationInSeconds;
                 downloadButton.href = recording.src;
                 downloadButton.download = videoname +".mp4";
-                // console.log(`Successfully recorded ${recordedBlob.size} bytes of ${recordedBlob.type} media.`);
-                // myBlob = recordedBlob;
-                // mode = "video";
+                console.log(`Successfully recorded ${recordedBlob.size} bytes of ${recordedBlob.type} media. duration = ${recording.duration}`);
+                myBlob = recordedBlob;
+                mode = "video";
 
                 // Simpan metadata dalam localStorage atau sesuai kebutuhan
-                let metadata = {
-                  filename: "RecordedVideo.mp4",
-                  duration: durationInSeconds,
-                  description: "Recorded video with custom duration metadata"
-                };
-                localStorage.setItem("videoMetadata", JSON.stringify(metadata));
+                // let metadata = {
+                //   filename: "RecordedVideo.mp4",
+                //   duration: durationInSeconds,
+                //   description: "Recorded video with custom duration metadata"
+                // };
+                // localStorage.setItem("videoMetadata", JSON.stringify(metadata));
 
-                console.log(`Successfully recorded ${recordedBlob.size} bytes of ${recordedBlob.type} media.`);
-                console.log(recordedBlob);    
-                myBlob = recordedBlob;
-                mode = "video";            
+                // console.log(`Successfully recorded ${recordedBlob.size} bytes of ${recordedBlob.type} media.`);
+                // console.log(recordedBlob);    
+                // myBlob = recordedBlob;
+                // mode = "video";            
 
                 //Creating an actual File
                 // const file = new File([myBlob], videoname +'.mp4', {
