@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Halaman Tutup</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding-top: 100px;
+    }
+
+    button {
+      font-size: 18px;
+      padding: 10px 20px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Selamat datang!</h1>
+  <p>Klik tombol di bawah ini untuk menutup halaman.</p>
+  <button onclick="closeWindow()">Tutup Halaman</button>
+
+  <script>
+    function closeWindow() {
+      // Untuk jendela yang dibuka via JavaScript (popup)
+      window.close();
+
+      // Untuk halaman utama (non-popup), ini akan gagal di sebagian besar browser modern karena alasan keamanan
+      // Solusi alternatif: redirect ke halaman kosong atau pesan
+      window.location.href = "about:blank";
+    }
+  </script>
+
+</body>
+</html>
